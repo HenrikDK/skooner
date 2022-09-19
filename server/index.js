@@ -21,6 +21,10 @@ kc.applyToRequest(opts);
 
 let k8sToken;
 try {
+    k8sToken = fs.readFileSync('/var/tmp/token').toString().replace();
+} catch { console.log('No service account token mounted') }
+
+try {
     k8sToken = fs.readFileSync('/run/secrets/kubernetes.io/serviceaccount/token').toString();
 } catch { console.log('No service account token mounted') }
 
@@ -55,20 +59,12 @@ const port = process.env.SERVER_PORT || 4654;
 const server = http.createServer(app).listen(port);
 console.log(`Server started. Listening on port ${port}`);
 
-server.on('connect', (req, socket, head) => {
-    if (k8sToken && APP_MODE == 'ReadOnly') 
-    {
+server.on('upgrade', (req, socket, head) => {
+    if (k8sToken && APP_MODE == 'ReadOnly') {
         req.headers.authorization = 'Bearer ' + k8sToken;
     }
-});
-/*server.on('upgrade', (req, socket, head) => {
-    if (k8sToken && APP_MODE == 'ReadOnly') {
-        req.headers['sec-websocket-protocol'] = 'base64url.bearer.authorization.k8s.io.' + (new Buffer.from(k8sToken)).toString('base64') + ', base64.binary.k8s.io';
-        req.rawHeaders = req.rawHeaders.filter(h => !h.includes('bearer.authorization'));
-        req.rawHeaders.push('base64url.bearer.authorization.k8s.io.' + (new Buffer.from(k8sToken)).toString('base64') + ', base64.binary.k8s.io');
-    }
     k8sProxy.upgrade(req, socket, head);
-});*/
+});
 
 function setServiceAccountAuth(req, res, next) {
     if (k8sToken && APP_MODE == 'ReadOnly') {
