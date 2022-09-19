@@ -292,7 +292,7 @@ function connectStream<T>(path: string, cb: StreamCallback<T>, onFail: FailCallb
     let isClosing = false;
 
     const url = combinePath(BASE_WS_URL, path);
-    const socket = new WebSocket(url);
+    const socket = new WebSocket(url, ['base64.binary.k8s.io']);
     socket.binaryType = 'arraybuffer';
     socket.addEventListener('message', onMessage);
     socket.addEventListener('close', onClose);
